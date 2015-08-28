@@ -5,7 +5,7 @@ source ~/.git-prompt.sh
 
 export CLICOLOR=1
 export TERM="xterm-color"
-PS1="\[$YELLOW\]\w\[\033[m\]\[$MAGENTA\]\$(__git_ps1)\[$WHITE\] Yes, Master? "
+PS1="\[$YELLOW\]\w\[\033[m\]\[$MAGENTA\]\$(__git_ps1)\[$WHITE\] $ "
 
 export BUNDLER_EDITOR='vim'
 export ARCHFLAGS='-arch x86_64'
@@ -16,10 +16,14 @@ alias migrate='bundle exec rake db:migrate db:test:prepare'
 alias rc='bundle exec rails c'
 alias rdb='bundle exec rails dbconsole'
 
+rwstart() {
+  rstart
+  wstart
+}
+
 rstart() {
   rstop
-  rails s -d
-  sidekiq -e development -L log/sidekiq.log -P tmp/pids/sidekiq.pid -d
+  rails s -d --binding=127.0.0.1
 }
 
 rstop() {
@@ -27,12 +31,18 @@ rstop() {
     kill -9 `cat tmp/pids/server.pid`
     rm tmp/pids/server.pid
   fi
+}
 
+wstart() {
+  wstop
+  sidekiq -e development -L log/sidekiq.log -P tmp/pids/sidekiq.pid -d
+}
+
+wstop() {
   if [ -f tmp/pids/sidekiq.pid ] ; then
     kill -9 `cat tmp/pids/sidekiq.pid`
     rm tmp/pids/sidekiq.pid
   fi
-
   rails runner "Sidekiq::Queue.new.clear"
 }
 
